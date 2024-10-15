@@ -58,7 +58,7 @@ fn compile_mode(words: &mut SplitWhitespace, dic: &mut Dictionary) -> () {
 fn parse(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> () {
     let stack_len = stack.len();
     match word {
-        "exit" => exit(0),
+        "bye" => exit(0),
         "+" => sum(stack),
         "*" => mul(stack),
         "-" => minus(stack),
