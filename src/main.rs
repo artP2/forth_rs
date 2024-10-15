@@ -1,4 +1,11 @@
-use std::{collections::HashMap, process::exit, str::SplitWhitespace};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+    process::exit,
+    str::SplitWhitespace,
+};
 
 fn main() {
     let mut lines = std::io::stdin().lines();
@@ -8,16 +15,32 @@ fn main() {
 
     loop {
         let line = lines.next().unwrap().unwrap().to_lowercase();
-        let mut line = line.split_whitespace();
-        match line.next().unwrap() {
-            ":" => compile_mode(&mut line, &mut dic),
-            "see" => println!("{:?}", dic.get(line.next().unwrap())),
-            word => parse(word, &mut stack, &mut dic),
-        }
-        for word in line {
-            parse(word, &mut stack, &mut dic);
+        if interpret_line(&line, &mut dic, &mut stack) {
+            println!("ok");
+        } else {
+            println!("not ok");
         }
     }
+}
+
+fn interpret_line(
+    line: &String,
+    dic: &mut HashMap<String, Vec<String>>,
+    stack: &mut Vec<i32>,
+) -> bool {
+    let mut line = line.split_whitespace();
+    match line.next().unwrap() {
+        ":" => compile_mode(&mut line, dic),
+        "see" => println!("{:?}", dic.get(line.next().unwrap())),
+        "dic_load" => dic_load(line.next().unwrap(), dic, stack),
+        "dic_write" => dic_write(line.next().unwrap(), dic),
+        word => parse(word, stack, dic),
+    }
+    for word in line {
+        parse(word, stack, dic);
+    }
+
+    true
 }
 
 fn compile_mode(words: &mut SplitWhitespace, dic: &mut HashMap<String, Vec<String>>) -> () {
@@ -100,4 +123,35 @@ fn dic_exec(word: &str, stack: &mut Vec<i32>, dic: &mut HashMap<String, Vec<Stri
     for w in exec {
         parse(&w, stack, dic);
     }
+}
+
+fn dic_load(file_name: &str, dic: &mut HashMap<String, Vec<String>>, stack: &mut Vec<i32>) -> () {
+    let path = Path::new(file_name);
+    let mut file = File::open(&path).unwrap();
+    let mut content = String::new();
+    file.read_to_string(&mut content).unwrap();
+
+    let lines = content.lines();
+
+    for line in lines {
+        _ = interpret_line(&line.to_string(), dic, stack);
+    }
+}
+
+fn dic_write(file_name: &str, dic: &mut HashMap<String, Vec<String>>) -> () {
+    let path = Path::new(file_name);
+    let mut file = File::create(&path).unwrap();
+    let mut content = String::new();
+
+    for word in dic {
+        content.push_str(": ");
+        content.push_str(word.0);
+        for w in word.1 {
+            content.push(' ');
+            content.push_str(w);
+        }
+        content.push_str(" ;\n");
+    }
+
+    file.write_all(content.as_bytes()).unwrap();
 }
