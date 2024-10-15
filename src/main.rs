@@ -7,11 +7,14 @@ use std::{
     str::SplitWhitespace,
 };
 
+type Stack = Vec<i32>;
+type Dictionary = HashMap<String, Vec<String>>;
+
 fn main() {
     let mut lines = std::io::stdin().lines();
 
-    let mut stack: Vec<i32> = Vec::new();
-    let mut dic: HashMap<String, Vec<String>> = HashMap::new();
+    let mut stack: Stack = Vec::new();
+    let mut dic: Dictionary = HashMap::new();
 
     loop {
         let line = lines.next().unwrap().unwrap().to_lowercase();
@@ -23,11 +26,7 @@ fn main() {
     }
 }
 
-fn interpret_line(
-    line: &String,
-    dic: &mut HashMap<String, Vec<String>>,
-    stack: &mut Vec<i32>,
-) -> bool {
+fn interpret_line(line: &String, dic: &mut Dictionary, stack: &mut Stack) -> bool {
     let mut line = line.split_whitespace();
     match line.next().unwrap() {
         ":" => compile_mode(&mut line, dic),
@@ -43,7 +42,7 @@ fn interpret_line(
     true
 }
 
-fn compile_mode(words: &mut SplitWhitespace, dic: &mut HashMap<String, Vec<String>>) -> () {
+fn compile_mode(words: &mut SplitWhitespace, dic: &mut Dictionary) -> () {
     let name = words.next().unwrap().to_string();
     let mut tasks = Vec::new();
     for word in words.into_iter() {
@@ -56,7 +55,7 @@ fn compile_mode(words: &mut SplitWhitespace, dic: &mut HashMap<String, Vec<Strin
     dic.insert(name, tasks);
 }
 
-fn parse(word: &str, stack: &mut Vec<i32>, dic: &mut HashMap<String, Vec<String>>) -> () {
+fn parse(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> () {
     let stack_len = stack.len();
     match word {
         "exit" => exit(0),
@@ -72,43 +71,46 @@ fn parse(word: &str, stack: &mut Vec<i32>, dic: &mut HashMap<String, Vec<String>
         "over" => stack.push(stack.get(stack_len - 2).unwrap().clone()),
         "swap" => stack.swap(stack_len - 1, stack_len - 2),
         "drop" => _ = stack.pop().unwrap(),
+        "nip" => _ = stack.remove(stack_len - 2),
+        "rot" => rot(stack),
+        ".s" => println!("{:?}", stack),
         w if dic.contains_key(w) => dic_exec(w, stack, dic),
         n if n.parse::<i32>().is_ok() => stack.push(n.parse().unwrap()),
         undefined => println!("{} is not defined", undefined),
     }
 }
 
-fn sum(stack: &mut Vec<i32>) -> () {
+fn sum(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     stack.push(b + a);
 }
 
-fn minus(stack: &mut Vec<i32>) -> () {
+fn minus(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     stack.push(b - a);
 }
 
-fn div(stack: &mut Vec<i32>) -> () {
+fn div(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     stack.push(b / a);
 }
 
-fn mul(stack: &mut Vec<i32>) -> () {
+fn mul(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     stack.push(b * a);
 }
 
-fn f_mod(stack: &mut Vec<i32>) -> () {
+fn f_mod(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     stack.push(b % a);
 }
 
-fn equal(stack: &mut Vec<i32>) -> () {
+fn equal(stack: &mut Stack) -> () {
     let a = stack.pop().unwrap();
     let b = stack.pop().unwrap();
     if a == b {
@@ -118,14 +120,19 @@ fn equal(stack: &mut Vec<i32>) -> () {
     }
 }
 
-fn dic_exec(word: &str, stack: &mut Vec<i32>, dic: &mut HashMap<String, Vec<String>>) -> () {
+fn rot(stack: &mut Stack) -> () {
+    let c = stack.remove(stack.len() - 3);
+    stack.push(c);
+}
+
+fn dic_exec(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> () {
     let exec = dic.get(word).unwrap().to_owned();
     for w in exec {
         parse(&w, stack, dic);
     }
 }
 
-fn dic_load(file_name: &str, dic: &mut HashMap<String, Vec<String>>, stack: &mut Vec<i32>) -> () {
+fn dic_load(file_name: &str, dic: &mut Dictionary, stack: &mut Stack) -> () {
     let path = Path::new(file_name);
     let mut file = File::open(&path).unwrap();
     let mut content = String::new();
@@ -138,7 +145,7 @@ fn dic_load(file_name: &str, dic: &mut HashMap<String, Vec<String>>, stack: &mut
     }
 }
 
-fn dic_write(file_name: &str, dic: &mut HashMap<String, Vec<String>>) -> () {
+fn dic_write(file_name: &str, dic: &mut Dictionary) -> () {
     let path = Path::new(file_name);
     let mut file = File::create(&path).unwrap();
     let mut content = String::new();
