@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::fmt::Display;
 use std::{
     collections::HashMap,
     fs::File,
@@ -49,20 +49,11 @@ impl Dictionary {
         Ok(())
     }
 
-    pub fn write(&mut self, file_name: &str) -> Result<(), ErrorKind> {
+    pub fn write(&self, file_name: &str) -> Result<(), ErrorKind> {
         let path = Path::new(file_name);
         let mut file = File::create(&path).unwrap();
-        let mut content = String::new();
 
-        for word in &self.0 {
-            write!(content, ": {}", word.0).unwrap();
-            for w in word.1 {
-                write!(content, " {}", w).unwrap();
-            }
-            content.push_str(" ;\n");
-        }
-
-        file.write_all(content.as_bytes()).unwrap();
+        file.write_all(self.to_string().as_bytes()).unwrap();
         Ok(())
     }
 
@@ -81,6 +72,19 @@ impl Dictionary {
         }
 
         self.0.insert(name, tasks);
+        Ok(())
+    }
+}
+
+impl Display for Dictionary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for word in &self.0 {
+            write!(f, ": {}", word.0)?;
+            for w in word.1 {
+                write!(f, " {}", w)?;
+            }
+            write!(f, " ;\n")?;
+        }
         Ok(())
     }
 }
