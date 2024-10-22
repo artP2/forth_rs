@@ -6,6 +6,7 @@ use std::{
     str::SplitWhitespace,
 };
 
+use crate::error::ErrorKind;
 use crate::{parser::parse, stack::Stack};
 
 pub struct Dictionary(HashMap<String, Vec<String>>);
@@ -15,18 +16,20 @@ impl Dictionary {
         Dictionary(HashMap::new())
     }
 
-    pub fn exec(&mut self, word: &str, stack: &mut Stack) -> bool {
+    pub fn exec(&mut self, word: &str, stack: &mut Stack) -> Result<(), ErrorKind> {
         if self.0.contains_key(word) {
             let exec = self.0.get(word).unwrap().to_owned();
             for w in exec {
-                parse(&w, stack, self);
+                if parse(&w, stack, self).is_err() {
+                    return Err(ErrorKind::ExecError);
+                }
             }
-            return true;
+            return Ok(());
         }
-        false
+        Err(ErrorKind::UndefinedWordError(word.to_string()))
     }
 
-    pub fn load(&mut self, file_name: &str) -> () {
+    pub fn load(&mut self, file_name: &str) -> Result<(), ErrorKind> {
         let path = Path::new(file_name);
         let mut file = File::open(&path).unwrap();
         let mut content = String::new();
@@ -37,14 +40,15 @@ impl Dictionary {
         for line in lines {
             let mut line = line.split_whitespace();
             if line.next().unwrap() == ":" {
-                self.compile(&mut line);
+                self.compile(&mut line)?;
             } else {
                 continue;
             }
         }
+        Ok(())
     }
 
-    pub fn write(&mut self, file_name: &str) -> () {
+    pub fn write(&mut self, file_name: &str) -> Result<(), ErrorKind> {
         let path = Path::new(file_name);
         let mut file = File::create(&path).unwrap();
         let mut content = String::new();
@@ -60,13 +64,14 @@ impl Dictionary {
         }
 
         file.write_all(content.as_bytes()).unwrap();
+        Ok(())
     }
 
     pub fn see(&self, word: &str) -> &Vec<String> {
         self.0.get(word).unwrap()
     }
 
-    pub fn compile(&mut self, words: &mut SplitWhitespace) -> () {
+    pub fn compile(&mut self, words: &mut SplitWhitespace) -> Result<(), ErrorKind> {
         let name = words.next().unwrap().to_string();
         let mut tasks = Vec::new();
         for word in words.into_iter() {
@@ -77,5 +82,6 @@ impl Dictionary {
         }
 
         self.0.insert(name, tasks);
+        Ok(())
     }
 }

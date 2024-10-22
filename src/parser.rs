@@ -1,13 +1,22 @@
 use std::process::exit;
 
-use crate::{dictionary::Dictionary, stack::Stack};
+use crate::{dictionary::Dictionary, error::ErrorKind, stack::Stack};
 
-pub fn parse(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> () {
+pub fn parse(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> Result<(), ErrorKind> {
     match word {
         "bye" => exit(0),
-        "." => println!("{}", stack.pop()),
-        "emit" => println!("{}", stack.pop() as u8 as char),
-        ".s" => println!("{:?}", stack.see()),
+        "." => {
+            println!("{}", stack.pop()?);
+            Ok(())
+        }
+        "emit" => {
+            println!("{}", stack.pop()? as u8 as char);
+            Ok(())
+        }
+        ".s" => {
+            println!("{:?}", stack.see());
+            Ok(())
+        }
         "+" => stack.sum(),
         "*" => stack.mul(),
         "-" => stack.minus(),
@@ -17,11 +26,17 @@ pub fn parse(word: &str, stack: &mut Stack, dic: &mut Dictionary) -> () {
         "dup" => stack.dup(),
         "over" => stack.over(),
         "swap" => stack.swap(),
-        "drop" => _ = stack.pop(),
-        "nip" => _ = stack.nip(),
+        "drop" => {
+            _ = stack.pop()?;
+            Ok(())
+        }
+        "nip" => {
+            _ = stack.nip()?;
+            Ok(())
+        }
         "rot" => stack.rot(),
-        w if dic.exec(w, stack) => (),
+        w if dic.exec(w, stack).is_ok() => Ok(()),
         n if n.parse::<i32>().is_ok() => stack.push(n.parse().unwrap()),
-        undefined => println!("{} is not defined", undefined),
+        undefined => Err(ErrorKind::UndefinedWordError(undefined.to_string())),
     }
 }
