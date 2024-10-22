@@ -1,7 +1,8 @@
+use std::fmt::Write;
 use std::{
     collections::HashMap,
     fs::File,
-    io::{Read, Write},
+    io::{Read, Write as IoWrite},
     path::Path,
     str::SplitWhitespace,
 };
@@ -54,11 +55,9 @@ impl Dictionary {
         let mut content = String::new();
 
         for word in &self.0 {
-            content.push_str(": ");
-            content.push_str(word.0);
+            write!(content, ": {}", word.0).unwrap();
             for w in word.1 {
-                content.push(' ');
-                content.push_str(w);
+                write!(content, " {}", w).unwrap();
             }
             content.push_str(" ;\n");
         }

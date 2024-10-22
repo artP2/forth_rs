@@ -4,7 +4,6 @@ mod parser;
 mod stack;
 
 use dictionary::Dictionary;
-use error::ErrorKind;
 use parser::parse;
 use stack::Stack;
 
@@ -28,20 +27,12 @@ fn main() {
             word => parse(word, stack, dic),
         };
         if let Err(error) = ok {
-            match error {
-                ErrorKind::StackUnderFlowError => println!("Error: stack underflow"),
-                ErrorKind::UndefinedWordError(w) => println!("Undefined word: {}", w),
-                ErrorKind::ExecError => println!("Exec error"),
-            }
+            println!("{error}");
             continue 'a;
         }
         for word in line {
             if let Err(error) = parse(word, stack, dic) {
-                match error {
-                    ErrorKind::StackUnderFlowError => println!("Error: stack underflow"),
-                    ErrorKind::UndefinedWordError(w) => println!("Undefined word: {}", w),
-                    ErrorKind::ExecError => println!("Exec error"),
-                }
+                println!("{error}");
                 continue 'a;
             }
         }
