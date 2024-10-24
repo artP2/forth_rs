@@ -37,7 +37,7 @@ impl Dictionary {
         let lines = content.lines();
 
         for line in lines {
-            let mut line = line.split_whitespace();
+            let mut line = line.trim().strip_suffix(";").unwrap().split_whitespace();
             if line.next().unwrap() == ":" {
                 let tokens: Vec<Token> = line.map(|t| t.parse::<Token>().expect("error")).collect();
                 self.compile(&tokens)?;
