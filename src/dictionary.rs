@@ -4,28 +4,26 @@ use std::{
     fs::File,
     io::{Read, Write as IoWrite},
     path::Path,
-    str::SplitWhitespace,
 };
 
 use crate::error::ErrorKind;
-use crate::{parser::parse, stack::Stack};
+use crate::parser::{exec_tokens, Token};
+use crate::stack::Stack;
 
-pub struct Dictionary(HashMap<String, Vec<String>>);
+pub struct Dictionary(HashMap<String, Vec<Token>>);
 
 impl Dictionary {
     pub fn new() -> Self {
         Dictionary(HashMap::new())
     }
 
-    pub fn exec(&mut self, word: &str, stack: &mut Stack) -> Result<(), ErrorKind> {
+    pub fn exec(&self, word: &str, stack: &mut Stack) -> Result<String, ErrorKind> {
         if self.0.contains_key(word) {
-            let exec = self.0.get(word).unwrap().to_owned();
-            for w in exec {
-                if parse(&w, stack, self).is_err() {
-                    return Err(ErrorKind::ExecError);
-                }
+            let tokens = self.0.get(word).unwrap();
+            match exec_tokens(&tokens, stack, self) {
+                Ok(s) => return Ok(s),
+                Err(e) => return Err(e),
             }
-            return Ok(());
         }
         Err(ErrorKind::UndefinedWordError(word.to_string()))
     }
@@ -41,7 +39,8 @@ impl Dictionary {
         for line in lines {
             let mut line = line.split_whitespace();
             if line.next().unwrap() == ":" {
-                self.compile(&mut line)?;
+                let tokens: Vec<Token> = line.map(|t| t.parse::<Token>().expect("error")).collect();
+                self.compile(&tokens)?;
             } else {
                 continue;
             }
@@ -49,7 +48,7 @@ impl Dictionary {
         Ok(())
     }
 
-    pub fn write(&self, file_name: &str) -> Result<(), ErrorKind> {
+    pub fn _write(&self, file_name: &str) -> Result<(), ErrorKind> {
         let path = Path::new(file_name);
         let mut file = File::create(&path).unwrap();
 
@@ -57,21 +56,14 @@ impl Dictionary {
         Ok(())
     }
 
-    pub fn see(&self, word: &str) -> &Vec<String> {
-        self.0.get(word).unwrap()
+    pub fn see(&self, word: &str) -> String {
+        format!("{:?}", self.0.get(word).unwrap())
     }
 
-    pub fn compile(&mut self, words: &mut SplitWhitespace) -> Result<(), ErrorKind> {
-        let name = words.next().unwrap().to_string();
-        let mut tasks = Vec::new();
-        for word in words.into_iter() {
-            if word == ";" {
-                break;
-            }
-            tasks.push(word.to_string());
-        }
-
-        self.0.insert(name, tasks);
+    pub fn compile(&mut self, tokens: &Vec<Token>) -> Result<(), ErrorKind> {
+        let (name, tokens) = tokens.split_first().unwrap();
+        let name = name.to_string();
+        self.0.insert(name, tokens.to_vec());
         Ok(())
     }
 }

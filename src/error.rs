@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
+#[derive(Debug)]
 pub enum ErrorKind {
     UndefinedWordError(String),
-    ExecError,
     StackUnderFlowError,
+    DivisionByZero,
+    UnexpectedToken(String),
 }
 
 impl Display for ErrorKind {
@@ -11,7 +13,8 @@ impl Display for ErrorKind {
         match self {
             ErrorKind::StackUnderFlowError => write!(f, "Error: stack underflow"),
             ErrorKind::UndefinedWordError(w) => write!(f, "Undefined word: {}", w),
-            ErrorKind::ExecError => write!(f, "Exec error"),
+            ErrorKind::DivisionByZero => write!(f, "Error: division by zero"),
+            ErrorKind::UnexpectedToken(t) => write!(f, "Error: unexpected token: {}", t),
         }
     }
 }
