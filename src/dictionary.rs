@@ -28,7 +28,7 @@ impl Dictionary {
         Err(ErrorKind::UndefinedWordError(word.to_string()))
     }
 
-    pub fn load(&mut self, file_name: &str) -> Result<(), ErrorKind> {
+    pub fn load(&mut self, file_name: &str, commands: &mut Vec<String>) -> Result<(), ErrorKind> {
         let path = Path::new(file_name);
         let mut file = File::open(&path).unwrap();
         let mut content = String::new();
@@ -40,7 +40,7 @@ impl Dictionary {
             let mut line = line.trim().strip_suffix(";").unwrap().split_whitespace();
             if line.next().unwrap() == ":" {
                 let tokens: Vec<Token> = line.map(|t| t.parse::<Token>().expect("error")).collect();
-                self.compile(&tokens)?;
+                self.compile(&tokens, Some(commands))?;
             } else {
                 continue;
             }
@@ -60,9 +60,16 @@ impl Dictionary {
         format!("{:?}", self.0.get(word).unwrap())
     }
 
-    pub fn compile(&mut self, tokens: &Vec<Token>) -> Result<(), ErrorKind> {
+    pub fn compile(
+        &mut self,
+        tokens: &Vec<Token>,
+        commands: Option<&mut Vec<String>>,
+    ) -> Result<(), ErrorKind> {
         let (name, tokens) = tokens.split_first().unwrap();
         let name = name.to_string();
+        if let Some(commands) = commands {
+            commands.push(name.to_owned());
+        }
         self.0.insert(name, tokens.to_vec());
         Ok(())
     }

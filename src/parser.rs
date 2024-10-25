@@ -134,7 +134,7 @@ pub fn handle_mode(
 
     let (first, tokens) = tokens.split_first().unwrap();
     match first {
-        Token::CompileMode => dic.compile(&tokens.to_vec())?,
+        Token::CompileMode => dic.compile(&tokens.to_vec(), None)?,
         Token::See => match tokens.first().unwrap() {
             Token::Word(w) => s.push_str(&dic.see(w)),
             t => return Err(ErrorKind::UnexpectedToken(t.to_string())),
@@ -146,4 +146,32 @@ pub fn handle_mode(
     };
 
     Ok(s)
+}
+
+pub fn commands() -> Vec<String> {
+    let commands = vec![
+        Token::CompileMode,
+        Token::See,
+        Token::Bye,
+        Token::Dot,
+        Token::Emit,
+        Token::DotStack,
+        Token::Plus,
+        Token::Asterisk,
+        Token::Minus,
+        Token::Slash,
+        Token::Equal,
+        Token::Mod,
+        Token::Dup,
+        Token::Over,
+        Token::Swap,
+        Token::Drop,
+        Token::Nip,
+        Token::Rot,
+    ]
+    .iter()
+    .map(|t| format!("{}", t))
+    .collect();
+
+    commands
 }
